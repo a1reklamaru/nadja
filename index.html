@@ -279,12 +279,44 @@
       font-size: 12px;
     }
 
+    .month-conclusions {
+      margin-top: 24px;
+    }
+
+    .month-conclusion-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .month-conclusion {
+      padding: 16px;
+      background: #f8fbfa;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--green);
+      border-radius: 8px;
+    }
+
+    .month-conclusion strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .month-conclusion p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
     @media (max-width: 1080px) {
       header { grid-template-columns: 1fr; }
       .period-control { justify-self: stretch; }
       .kpis { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
       .grid,
-      .insights { grid-template-columns: 1fr; }
+      .insights,
+      .month-conclusion-list { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 640px) {
@@ -438,6 +470,12 @@
       </div>
       <p class="footnote">CTR, CPC, CR и CPA пересчитываются от суммарных показателей за выбранный период.</p>
     </section>
+
+    <section class="panel month-conclusions">
+      <h2 id="month-conclusions-title">Короткие выводы по месяцам</h2>
+      <p class="hint" id="month-conclusions-hint">Текстовая интерпретация результатов простым языком.</p>
+      <div class="month-conclusion-list" id="month-conclusion-list"></div>
+    </section>
   </main>
 
   <script>
@@ -468,6 +506,13 @@
       { campaign: 'Чек-ап РСЯ', month: 'Май', impressions: 33725, clicks: 223, spend: 11969.46, conversions: 56 },
       { campaign: 'Чек-ап Поиск', month: 'Май', impressions: 6441, clicks: 163, spend: 12786.02, conversions: 40 }
     ];
+
+    const monthConclusions = {
+      'Февраль': 'Месяц дал самый большой охват и больше всего кликов: реклама активно набирала аудиторию. При этом стоимость конверсии была выше среднего, поэтому февраль хорошо сработал на трафик, но требовал аккуратной оптимизации по заявкам.',
+      'Март': 'Трафика стало меньше, но качество обращений заметно выросло: конверсия из клика поднялась до 18,27%. Это говорит о более заинтересованной аудитории, хотя цена клика стала выше.',
+      'Апрель': 'Апрель получился самым экономным по расходу и при этом дал лучший CTR за период. CPA снизился до 299,16 ₽, поэтому месяц выглядит более сбалансированным по стоимости и результату.',
+      'Май': 'Май стал самым сильным месяцем по конверсиям: 257 целевых действий и лучший CPA 198,67 ₽. Реклама привела меньше кликов, чем в феврале, но клики были значительно качественнее.'
+    };
 
     const colors = {
       blue: getCss('--blue'),
@@ -618,6 +663,29 @@
       document.getElementById('table-title').textContent = selectedMonth === 'year' ? 'Кампании' : `Кампании: ${selectedMonth}`;
     }
 
+    function renderMonthConclusions() {
+      const wrap = document.getElementById('month-conclusion-list');
+      const visible = selectedMonth === 'year'
+        ? months
+        : months.filter((item) => item.month === selectedMonth);
+      document.getElementById('month-conclusions-title').textContent = selectedMonth === 'year'
+        ? 'Короткие выводы по месяцам'
+        : `Короткий вывод: ${selectedMonth}`;
+      document.getElementById('month-conclusions-hint').textContent = selectedMonth === 'year'
+        ? 'Главное по каждому месяцу без рекламной терминологии.'
+        : 'Главное по выбранному месяцу простым языком.';
+      wrap.innerHTML = '';
+      visible.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'month-conclusion';
+        card.innerHTML = `
+          <strong>${item.month}: ${fmtInt(item.conversions)} конверсий, CPA ${fmtRub(item.cpa)}</strong>
+          <p>${monthConclusions[item.month]}</p>
+        `;
+        wrap.appendChild(card);
+      });
+    }
+
     function renderDashboard() {
       const list = getVisibleMonths();
       const totals = calculateTotals(list);
@@ -625,6 +693,7 @@
       renderKpis(totals);
       renderInsights(list, totals);
       renderTable(totals);
+      renderMonthConclusions();
       const showCharts = selectedMonth === 'year';
       document.getElementById('charts-section').classList.toggle('is-hidden', !showCharts);
       if (showCharts) chartRenderers.forEach((render) => render());
